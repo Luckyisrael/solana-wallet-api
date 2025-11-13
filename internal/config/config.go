@@ -1,9 +1,10 @@
 package config
 
 import (
-	"log"
+    "log"
+    "strings"
 
-	"github.com/spf13/viper"
+    "github.com/spf13/viper"
 )
 
 type Config struct {
@@ -39,19 +40,23 @@ type AWSConfig struct {
 }
 
 func Load() *Config {
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath("./configs")
-	viper.AddConfigPath(".")
+    viper.SetConfigName("config")
+    viper.SetConfigType("yaml")
+    viper.AddConfigPath("./configs")
+    viper.AddConfigPath(".")
+    viper.AddConfigPath("./internal/config")
 
-	// Environment variables
-	viper.AutomaticEnv()
-	viper.SetEnvPrefix("APP")
+    // Environment variables
+    viper.AutomaticEnv()
+    viper.SetEnvPrefix("APP")
+    viper.SetEnvKeyReplacer(strings.NewReplacer(".", "__"))
 
 	// Defaults
 	viper.SetDefault("server.port", "8080")
 	viper.SetDefault("solana.network", "devnet")
 	viper.SetDefault("solana.rpc_endpoint", "https://api.devnet.solana.com")
+	
+    viper.BindEnv("postgres.url", "POSTGRES_URL")
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {

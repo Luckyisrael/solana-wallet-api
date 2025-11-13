@@ -1,6 +1,9 @@
 package handler
 
-import "github.com/gin-gonic/gin"
+import (
+    "time"
+    "github.com/gin-gonic/gin"
+)
 
 // Health godoc
 // @Summary      Health check
@@ -9,8 +12,8 @@ import "github.com/gin-gonic/gin"
 // @Success      200  {object}  map[string]string
 // @Router       /health [get]
 func Health(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"status": "ok",
-		"time":   time.Now().UTC(),
-	})
+    c.JSON(200, gin.H{
+        "status": "ok",
+        "time":   time.Now().UTC(),
+    })
 }

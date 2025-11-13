@@ -2,7 +2,7 @@ server:
   port: 8080
 
 postgres:
-  url: postgres://wallet:secret@localhost:5432/wallet?sslmode=disable
+  url: postgres://wallet:secret@127.0.0.1:5433/wallet?sslmode=disable
 
 redis:
   addr: localhost:6379

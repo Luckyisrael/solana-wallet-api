@@ -1,4 +1,102 @@
 basePath: /v1
+definitions:
+  dto.BalanceResponse:
+    properties:
+      address:
+        example: 7x9kLmN2pQ...abc123
+        type: string
+      sol:
+        description: lamports → SOL
+        example: "1.500000"
+        type: string
+      tokens:
+        items:
+          $ref: '#/definitions/dto.TokenBalance'
+        type: array
+    type: object
+  dto.CreateWalletRequest:
+    properties:
+      exportSeedPhrase:
+        default: false
+        description: for future implementation if i have time to update thihs
+        example: false
+        type: boolean
+      returnPrivateKey:
+        default: false
+        example: true
+        type: boolean
+    type: object
+  dto.TokenBalance:
+    properties:
+      amount:
+        example: "1.500000"
+        type: string
+      decimals:
+        example: 9
+        type: integer
+      mint:
+        example: So11111111111111111111111111111111111111112
+        type: string
+      name:
+        example: Wrapped SOL
+        type: string
+      symbol:
+        example: SOL
+        type: string
+      uiAmount:
+        description: float for UI
+        example: 1.5
+        type: number
+    type: object
+  dto.TransferRequest:
+    properties:
+      amount:
+        description: formated amount
+        example: "0.1"
+        type: string
+      fromAddress:
+        example: 7x9kLmN2pQ...abc123
+        type: string
+      mint:
+        description: SPL Tokens
+        example: EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyK9u7u
+        type: string
+      toAddress:
+        example: 9xY8kLmN2pQ...xyz789
+        type: string
+    required:
+    - amount
+    - fromAddress
+    - toAddress
+    type: object
+  dto.TransferResponse:
+    properties:
+      feePayer:
+        example: 7x9kLmN2pQ...abc123
+        type: string
+      signature:
+        example: 5e9x...abc123
+        type: string
+      signedTxBase64:
+        example: AQAA...==
+        type: string
+    type: object
+  dto.WalletAddressOnly:
+    properties:
+      address:
+        example: 9xY8kLmN2pQ...abc123
+        type: string
+    type: object
+  dto.WalletWithKey:
+    properties:
+      address:
+        example: 9xY8kLmN2pQ...abc123
+        type: string
+      seedPhrase:
+        description: 12 words
+        example: abandon ... zoo
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -19,4 +117,116 @@ paths:
       summary: Health check
       tags:
       - system
+  /transactions/transfer:
+    post:
+      consumes:
+      - application/json
+      description: Creates a signed SOL or SPL token transfer. Returns base64 tx.
+      parameters:
+      - description: Transfer request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.TransferRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.TransferResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "429":
+          description: Too Many Requests
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Build and sign a transfer
+      tags:
+      - transactions
+  /wallets:
+    post:
+      consumes:
+      - application/json
+      description: Generates a new keypair. If returnPrivateKey=true, includes private
+        key (one-time only).
+      parameters:
+      - description: Request body
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateWalletRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.WalletWithKey'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new Solana wallet
+      tags:
+      - wallets
+  /wallets/{address}/balance:
+    get:
+      description: Returns SOL and SPL token balances with. Cached for 5 minutes.
+      parameters:
+      - description: Wallet address
+        in: path
+        name: address
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BalanceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "429":
+          description: Too Many Requests
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get wallet balance
+      tags:
+      - wallets
 swagger: "2.0"

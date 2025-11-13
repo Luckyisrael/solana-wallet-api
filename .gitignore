@@ -17,3 +17,5 @@ configs/config.local.yaml
 
 # OS
 .DS_Store
+
+.env

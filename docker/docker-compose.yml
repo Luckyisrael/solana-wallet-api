@@ -22,10 +22,10 @@ services:
       POSTGRES_USER: wallet
       POSTGRES_PASSWORD: secret
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./scripts:/docker-entrypoint-initdb.d
+      - ../scripts:/docker-entrypoint-initdb.d
 
   redis:
     image: redis:7-alpine

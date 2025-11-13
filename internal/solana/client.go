@@ -8,18 +8,18 @@ import (
 )
 
 type Client struct {
-	*rpc.Client
+    *rpc.Client
 }
 
 func NewClient(endpoint string) *Client {
 	return &Client{rpc.New(endpoint)}
 }
 
-// GetLatestBlockhash with finalized commitment
+// GetLatestBlockhash returns the latest finalized blockhash
 func (c *Client) GetLatestBlockhash(ctx context.Context) (solana.Hash, error) {
-	resp, err := c.GetLatestBlockhash(ctx, rpc.CommitmentFinalized)
-	if err != nil {
-		return solana.Hash{}, err
-	}
-	return resp.Value.Blockhash, nil
+    resp, err := c.Client.GetLatestBlockhash(ctx, rpc.CommitmentFinalized)
+    if err != nil {
+        return solana.Hash{}, err
+    }
+    return resp.Value.Blockhash, nil
 }

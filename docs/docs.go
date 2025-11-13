@@ -34,6 +34,311 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/transactions/transfer": {
+            "post": {
+                "description": "Creates a signed SOL or SPL token transfer. Returns base64 tx.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transactions"
+                ],
+                "summary": "Build and sign a transfer",
+                "parameters": [
+                    {
+                        "description": "Transfer request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.TransferRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.TransferResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/wallets": {
+            "post": {
+                "description": "Generates a new keypair. If returnPrivateKey=true, includes private key (one-time only).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wallets"
+                ],
+                "summary": "Create a new Solana wallet",
+                "parameters": [
+                    {
+                        "description": "Request body",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateWalletRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.WalletWithKey"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/wallets/{address}/balance": {
+            "get": {
+                "description": "Returns SOL and SPL token balances with. Cached for 5 minutes.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "wallets"
+                ],
+                "summary": "Get wallet balance",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wallet address",
+                        "name": "address",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BalanceResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "dto.BalanceResponse": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "example": "7x9kLmN2pQ...abc123"
+                },
+                "sol": {
+                    "description": "lamports → SOL",
+                    "type": "string",
+                    "example": "1.500000"
+                },
+                "tokens": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.TokenBalance"
+                    }
+                }
+            }
+        },
+        "dto.CreateWalletRequest": {
+            "type": "object",
+            "properties": {
+                "exportSeedPhrase": {
+                    "description": "for future implementation if i have time to update thihs",
+                    "type": "boolean",
+                    "default": false,
+                    "example": false
+                },
+                "returnPrivateKey": {
+                    "type": "boolean",
+                    "default": false,
+                    "example": true
+                }
+            }
+        },
+        "dto.TokenBalance": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string",
+                    "example": "1.500000"
+                },
+                "decimals": {
+                    "type": "integer",
+                    "example": 9
+                },
+                "mint": {
+                    "type": "string",
+                    "example": "So11111111111111111111111111111111111111112"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Wrapped SOL"
+                },
+                "symbol": {
+                    "type": "string",
+                    "example": "SOL"
+                },
+                "uiAmount": {
+                    "description": "float for UI",
+                    "type": "number",
+                    "example": 1.5
+                }
+            }
+        },
+        "dto.TransferRequest": {
+            "type": "object",
+            "required": [
+                "amount",
+                "fromAddress",
+                "toAddress"
+            ],
+            "properties": {
+                "amount": {
+                    "description": "formated amount",
+                    "type": "string",
+                    "example": "0.1"
+                },
+                "fromAddress": {
+                    "type": "string",
+                    "example": "7x9kLmN2pQ...abc123"
+                },
+                "mint": {
+                    "description": "SPL Tokens",
+                    "type": "string",
+                    "example": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyK9u7u"
+                },
+                "toAddress": {
+                    "type": "string",
+                    "example": "9xY8kLmN2pQ...xyz789"
+                }
+            }
+        },
+        "dto.TransferResponse": {
+            "type": "object",
+            "properties": {
+                "feePayer": {
+                    "type": "string",
+                    "example": "7x9kLmN2pQ...abc123"
+                },
+                "signature": {
+                    "type": "string",
+                    "example": "5e9x...abc123"
+                },
+                "signedTxBase64": {
+                    "type": "string",
+                    "example": "AQAA...=="
+                }
+            }
+        },
+        "dto.WalletAddressOnly": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "example": "9xY8kLmN2pQ...abc123"
+                }
+            }
+        },
+        "dto.WalletWithKey": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "example": "9xY8kLmN2pQ...abc123"
+                },
+                "seedPhrase": {
+                    "description": "12 words",
+                    "type": "string",
+                    "example": "abandon ... zoo"
+                }
+            }
         }
     }
 }`

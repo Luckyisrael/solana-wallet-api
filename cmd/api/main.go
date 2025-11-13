@@ -1,23 +1,31 @@
 package main
 
 import (
-	"context"
-	"fmt"
-	"log"
-	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
+    "context"
+    "fmt"
+    "log"
+    "net/http"
+    "os"
+    "os/signal"
+    "syscall"
+    "time"
 
-	"github.com/gin-gonic/gin"
-	_ "github.com/Luckyisrael/solana-wallet-api/docs" // swaggo docs
-	"github.com/Luckyisrael/solana-wallet-api/internal/api/handler"
-	"github.com/Luckyisrael/solana-wallet-api/internal/api/middleware"
-	"github.com/Luckyisrael/solana-wallet-api/internal/config"
-	"github.com/Luckyisrael/solana-wallet-api/internal/solana"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
+    "github.com/gin-gonic/gin"
+    _ "github.com/Luckyisrael/solana-wallet-api/docs" 
+    "github.com/Luckyisrael/solana-wallet-api/internal/api/handler"
+    "github.com/Luckyisrael/solana-wallet-api/internal/api/middleware"
+    "github.com/Luckyisrael/solana-wallet-api/internal/config"
+    "github.com/Luckyisrael/solana-wallet-api/internal/solana"
+    "github.com/Luckyisrael/solana-wallet-api/internal/repo"
+    "github.com/Luckyisrael/solana-wallet-api/internal/service/wallet"
+    "github.com/Luckyisrael/solana-wallet-api/internal/redis"
+    "github.com/Luckyisrael/solana-wallet-api/internal/service/balance"
+	"github.com/Luckyisrael/solana-wallet-api/internal/service/transfer"
+
+    "github.com/jackc/pgx/v5/pgxpool"
+    "github.com/joho/godotenv"
+    swaggerFiles "github.com/swaggo/files"
+    ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 var cfg *config.Config
@@ -28,10 +36,32 @@ var cfg *config.Config
 // @host            localhost:8080
 // @BasePath        /v1
 func main() {
-	cfg = config.Load()
+	// Load environment variables
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, using system env")
+	}
 
-	// Initialize Solana client
-	solanaClient := solana.NewClient(cfg.Solana.RPCEndpoint)
+    cfg = config.Load()
+    log.Printf("DB URL: %s", cfg.Postgres.URL)
+
+	// DB Pool
+    db, err := pgxpool.New(context.Background(), cfg.Postgres.URL)
+    if err != nil {
+        log.Fatalf("Unable to connect to database: %v", err)
+    }
+    defer db.Close()
+
+    // Repos
+    walletRepo := repo.NewWalletRepo(db)
+
+    // Services
+    walletService := wallet.NewService(walletRepo)
+
+    // Initialize Solana + Redis clients
+    solanaClient := solana.NewClient(cfg.Solana.RPCEndpoint)
+    redisClient := redis.NewClient(cfg.Redis.Addr, cfg.Redis.Password, cfg.Redis.DB)
+    balanceService := balance.NewService(solanaClient, redisClient)
+	transferService := transfer.NewService(walletRepo, solanaClient, redisClient, cfg.AES.MasterKey)
 
 	// Gin mode
 	gin.SetMode(gin.ReleaseMode)
@@ -39,21 +69,20 @@ func main() {
 		gin.SetMode(gin.DebugMode)
 	}
 
-	r := gin.New()
-	r.Use(middleware.Logger(), middleware.RecoveryWithZap())
+    r := gin.New()
+    r.Use(middleware.Logger(), middleware.RecoveryWithZap())
 
-	// Health check
-	r.GET("/health", handler.Health)
+    // Health check
+    r.GET("/health", handler.Health)
+    r.GET("/v1/health", handler.Health)
 
-	// API v1
-	v1 := r.Group("/v1")
-	{
-		v1.POST("/wallets", handler.CreateWallet)
-		v1.GET("/wallets/:address/balance", handler.GetBalance)
-		v1.POST("/transactions/transfer", handler.Transfer)
-		v1.POST("/transactions/broadcast", handler.Broadcast)
-	}
-
+    // API v1
+    v1 := r.Group("/v1")
+    {
+        v1.POST("/wallets", handler.CreateWallet(walletService))
+        v1.GET("/wallets/:address/balance", handler.GetBalance(balanceService))
+		v1.POST("/transactions/transfer", handler.Transfer(transferService))
+    }
 	// Swagger
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
