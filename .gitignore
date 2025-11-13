@@ -1,0 +1,19 @@
+# Binaries
+wallet-api
+
+# Config
+configs/config.local.yaml
+
+# Go
+/.go
+/bin
+
+# Docker
+.docker
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store

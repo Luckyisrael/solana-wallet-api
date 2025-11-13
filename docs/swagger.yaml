@@ -1,0 +1,22 @@
+basePath: /v1
+host: localhost:8080
+info:
+  contact: {}
+  description: Production-ready Solana wallet backend.
+  title: Solana Wallet API
+  version: "1.0"
+paths:
+  /health:
+    get:
+      description: Returns 200 if service is up
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health check
+      tags:
+      - system
+swagger: "2.0"

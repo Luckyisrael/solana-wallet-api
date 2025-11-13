@@ -1,0 +1,18 @@
+server:
+  port: 8080
+
+postgres:
+  url: postgres://wallet:secret@localhost:5432/wallet?sslmode=disable
+
+redis:
+  addr: localhost:6379
+  password: ""
+  db: 0
+
+solana:
+  network: devnet
+  rpc_endpoint: https://api.devnet.solana.com
+
+aws:
+  region: us-east-1
+  kms_key_id: alias/solana-wallet-dev
