@@ -3,7 +3,7 @@ definitions:
   dto.BalanceResponse:
     properties:
       address:
-        example: 7x9kLmN2pQ...abc123
+        example: EH5FQ8bVGSc3kqGRbGMK9uKctBSMPAb9yB5vQfxLK5k4
         type: string
       sol:
         description: lamports → SOL
@@ -13,6 +13,31 @@ definitions:
         items:
           $ref: '#/definitions/dto.TokenBalance'
         type: array
+    type: object
+  dto.BroadcastRequest:
+    properties:
+      idempotencyKey:
+        example: tx-12345
+        type: string
+      signedTxBase64:
+        example: AQAA...==
+        type: string
+    required:
+    - signedTxBase64
+    type: object
+  dto.BroadcastResponse:
+    properties:
+      error:
+        type: string
+      signature:
+        example: 5e9x...abc123
+        type: string
+      slot:
+        type: integer
+      status:
+        description: pending, confirmed, failed
+        example: confirmed
+        type: string
     type: object
   dto.CreateWalletRequest:
     properties:
@@ -84,7 +109,7 @@ definitions:
   dto.WalletAddressOnly:
     properties:
       address:
-        example: 9xY8kLmN2pQ...abc123
+        example: 4gqrwNqUmc4afEb1iFEX8VjEjWJNfnmdMbkcdsUr9eRY
         type: string
     type: object
   dto.WalletWithKey:
@@ -117,6 +142,84 @@ paths:
       summary: Health check
       tags:
       - system
+  /transactions/{address}/history:
+    get:
+      description: Returns recent transaction signatures for the given address
+      parameters:
+      - description: Wallet address
+        in: path
+        name: address
+        required: true
+        type: string
+      - description: 'Max items (default: 20)'
+        in: query
+        name: limit
+        type: integer
+      - description: Signature cursor
+        in: query
+        name: before
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get transaction history
+      tags:
+      - transactions
+  /transactions/broadcast:
+    post:
+      consumes:
+      - application/json
+      description: Submits a base64-encoded signed tx. Idempotent.
+      parameters:
+      - description: Broadcast request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/dto.BroadcastRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BroadcastResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "429":
+          description: Too Many Requests
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Broadcast signed transaction
+      tags:
+      - transactions
   /transactions/transfer:
     post:
       consumes:

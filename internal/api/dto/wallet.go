@@ -8,7 +8,7 @@ type CreateWalletRequest struct {
 
 // WalletAddressOnly - custodial response
 type WalletAddressOnly struct {
-	Address string `json:"address" example:"9xY8kLmN2pQ...abc123"`
+	Address string `json:"address" example:"4gqrwNqUmc4afEb1iFEX8VjEjWJNfnmdMbkcdsUr9eRY"`
 }
 
 // WalletWithKey - non-custodial response

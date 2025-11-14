@@ -24,19 +24,18 @@ func CreateWallet(walletService *wallet.Service) gin.HandlerFunc {
     return func(c *gin.Context) {
         var req dto.CreateWalletRequest
         if err := c.ShouldBindJSON(&req); err != nil {
-            c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request"})
+            code := http.StatusBadRequest
+            c.JSON(code, gin.H{"success": false, "data": nil, "message": "invalid request", "responseCode": code})
             return
         }
 
         resp, err := walletService.CreateWallet(c.Request.Context(), &req)
         if err != nil {
-            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+            code := http.StatusInternalServerError
+            c.JSON(code, gin.H{"success": false, "data": nil, "message": err.Error(), "responseCode": code})
             return
         }
-        if req.ReturnPrivateKey {
-            c.JSON(http.StatusCreated, resp.(*dto.WalletWithKey))
-        } else {
-            c.JSON(http.StatusCreated, resp.(*dto.WalletAddressOnly))
-        }
+        code := http.StatusCreated
+        c.JSON(code, gin.H{"success": true, "data": resp, "message": "", "responseCode": code})
     }
 }

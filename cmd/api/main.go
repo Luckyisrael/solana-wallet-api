@@ -13,14 +13,16 @@ import (
     "github.com/gin-gonic/gin"
     _ "github.com/Luckyisrael/solana-wallet-api/docs" 
     "github.com/Luckyisrael/solana-wallet-api/internal/api/handler"
-    "github.com/Luckyisrael/solana-wallet-api/internal/api/middleware"
+    
     "github.com/Luckyisrael/solana-wallet-api/internal/config"
     "github.com/Luckyisrael/solana-wallet-api/internal/solana"
     "github.com/Luckyisrael/solana-wallet-api/internal/repo"
     "github.com/Luckyisrael/solana-wallet-api/internal/service/wallet"
     "github.com/Luckyisrael/solana-wallet-api/internal/redis"
     "github.com/Luckyisrael/solana-wallet-api/internal/service/balance"
-	"github.com/Luckyisrael/solana-wallet-api/internal/service/transfer"
+    "github.com/Luckyisrael/solana-wallet-api/internal/service/transfer"
+    "github.com/Luckyisrael/solana-wallet-api/internal/service/broadcast"
+    "github.com/Luckyisrael/solana-wallet-api/internal/service/history"
 
     "github.com/jackc/pgx/v5/pgxpool"
     "github.com/joho/godotenv"
@@ -35,6 +37,7 @@ var cfg *config.Config
 // @description     Production-ready Solana wallet backend.
 // @host            localhost:8080
 // @BasePath        /v1
+//
 func main() {
 	// Load environment variables
 	if err := godotenv.Load(); err != nil {
@@ -51,6 +54,8 @@ func main() {
     }
     defer db.Close()
 
+    
+
     // Repos
     walletRepo := repo.NewWalletRepo(db)
 
@@ -61,7 +66,9 @@ func main() {
     solanaClient := solana.NewClient(cfg.Solana.RPCEndpoint)
     redisClient := redis.NewClient(cfg.Redis.Addr, cfg.Redis.Password, cfg.Redis.DB)
     balanceService := balance.NewService(solanaClient, redisClient)
-	transferService := transfer.NewService(walletRepo, solanaClient, redisClient, cfg.AES.MasterKey)
+    transferService := transfer.NewService(walletRepo, solanaClient, redisClient, os.Getenv("MASTER_KEY"))
+    broadcastService := broadcast.NewService(solanaClient, redisClient)
+    historyService := history.NewService(solanaClient)
 
 	// Gin mode
 	gin.SetMode(gin.ReleaseMode)
@@ -70,8 +77,7 @@ func main() {
 	}
 
     r := gin.New()
-    r.Use(middleware.Logger(), middleware.RecoveryWithZap())
-
+    
     // Health check
     r.GET("/health", handler.Health)
     r.GET("/v1/health", handler.Health)
@@ -81,7 +87,9 @@ func main() {
     {
         v1.POST("/wallets", handler.CreateWallet(walletService))
         v1.GET("/wallets/:address/balance", handler.GetBalance(balanceService))
-		v1.POST("/transactions/transfer", handler.Transfer(transferService))
+        v1.POST("/transactions/transfer", handler.Transfer(transferService))
+        v1.POST("/transactions/broadcast", handler.Broadcast(broadcastService))
+        v1.GET("/transactions/:address/history", handler.GetHistory(historyService))
     }
 	// Swagger
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

@@ -35,6 +35,67 @@ const docTemplate = `{
                 }
             }
         },
+        "/transactions/broadcast": {
+            "post": {
+                "description": "Submits a base64-encoded signed tx. Idempotent.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transactions"
+                ],
+                "summary": "Broadcast signed transaction",
+                "parameters": [
+                    {
+                        "description": "Broadcast request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.BroadcastRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BroadcastResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/transactions/transfer": {
             "post": {
                 "description": "Creates a signed SOL or SPL token transfer. Returns base64 tx.",
@@ -91,6 +152,62 @@ const docTemplate = `{
                             "additionalProperties": {
                                 "type": "string"
                             }
+                        }
+                    }
+                }
+            }
+        },
+        "/transactions/{address}/history": {
+            "get": {
+                "description": "Returns recent transaction signatures for the given address",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "transactions"
+                ],
+                "summary": "Get transaction history",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Wallet address",
+                        "name": "address",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Max items (default: 20)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Signature cursor",
+                        "name": "before",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     }
                 }
@@ -211,7 +328,7 @@ const docTemplate = `{
             "properties": {
                 "address": {
                     "type": "string",
-                    "example": "7x9kLmN2pQ...abc123"
+                    "example": "EH5FQ8bVGSc3kqGRbGMK9uKctBSMPAb9yB5vQfxLK5k4"
                 },
                 "sol": {
                     "description": "lamports → SOL",
@@ -223,6 +340,42 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/dto.TokenBalance"
                     }
+                }
+            }
+        },
+        "dto.BroadcastRequest": {
+            "type": "object",
+            "required": [
+                "signedTxBase64"
+            ],
+            "properties": {
+                "idempotencyKey": {
+                    "type": "string",
+                    "example": "tx-12345"
+                },
+                "signedTxBase64": {
+                    "type": "string",
+                    "example": "AQAA...=="
+                }
+            }
+        },
+        "dto.BroadcastResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "signature": {
+                    "type": "string",
+                    "example": "5e9x...abc123"
+                },
+                "slot": {
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "pending, confirmed, failed",
+                    "type": "string",
+                    "example": "confirmed"
                 }
             }
         },
@@ -322,7 +475,7 @@ const docTemplate = `{
             "properties": {
                 "address": {
                     "type": "string",
-                    "example": "9xY8kLmN2pQ...abc123"
+                    "example": "4gqrwNqUmc4afEb1iFEX8VjEjWJNfnmdMbkcdsUr9eRY"
                 }
             }
         },

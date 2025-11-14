@@ -21,21 +21,24 @@ import (
 func GetBalance(balanceService *balance.Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		address := c.Param("address")
-		if address == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "address is required"})
-			return
-		}
+        if address == "" {
+            code := http.StatusBadRequest
+            c.JSON(code, gin.H{"success": false, "data": nil, "message": "address is required", "responseCode": code})
+            return
+        }
 
         resp, err := balanceService.GetBalance(c.Request.Context(), address)
         if err != nil {
             if err.Error() == "rate limit exceeded" {
-                c.JSON(http.StatusTooManyRequests, gin.H{"error": "rate limit exceeded"})
+                code := http.StatusTooManyRequests
+                c.JSON(code, gin.H{"success": false, "data": nil, "message": "rate limit exceeded", "responseCode": code})
                 return
             }
-            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+            code := http.StatusInternalServerError
+            c.JSON(code, gin.H{"success": false, "data": nil, "message": err.Error(), "responseCode": code})
             return
         }
-
-		c.JSON(http.StatusOK, resp)
+        code := http.StatusOK
+        c.JSON(code, gin.H{"success": true, "data": resp, "message": "", "responseCode": code})
 	}
 }

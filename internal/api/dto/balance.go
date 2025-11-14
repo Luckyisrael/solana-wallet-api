@@ -10,7 +10,7 @@ type TokenBalance struct {
 }
 
 type BalanceResponse struct {
-	Address string `json:"address" example:"7x9kLmN2pQ...abc123"`
+	Address string `json:"address" example:"EH5FQ8bVGSc3kqGRbGMK9uKctBSMPAb9yB5vQfxLK5k4"`
 	SOL     string `json:"sol" example:"1.500000"` // lamports → SOL
 	Tokens  []TokenBalance `json:"tokens"`
 }
